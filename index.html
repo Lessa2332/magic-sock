@@ -98,28 +98,73 @@
   </div>
 </div>
 <script>
+// Альтернативні джерела для Three.js
+const THREE_SOURCES = [
+  'https://unpkg.com/three@0.167.0/build/three.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r167/three.min.js',
+  'https://ajax.googleapis.com/ajax/libs/threejs/r167/three.min.js'
+];
+
 async function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src;
     script.onload = () => {
-      console.log(`${src} завантажено успішно`);
+      console.log(`✅ ${src} завантажено успішно`);
       resolve(script);
     };
-    script.onerror = (e) => {
-      console.error(`Помилка завантаження ${src}:`, e);
+    script.onerror = () => {
+      console.warn(`❌ ${src} не завантажився`);
       reject(new Error(`Завантаження ${src} не вдалося`));
     };
     document.head.appendChild(script);
   });
 }
 
+async function loadThreeJS() {
+  // Спочатку перевіримо, чи Three.js вже завантажений
+  if (typeof THREE !== 'undefined') {
+    console.log('✅ Three.js вже завантажено');
+    return;
+  }
+
+  // Спробуємо всі джерела по черзі
+  for (const src of THREE_SOURCES) {
+    try {
+      await loadScript(src);
+      if (typeof THREE !== 'undefined') {
+        console.log(`✅ Three.js успішно завантажено з ${src}`);
+        return;
+      }
+    } catch (err) {
+      console.warn(`Не вдалося завантажити з ${src}`);
+      continue;
+    }
+  }
+  
+  throw new Error('Three.js не вдалося завантажити з жодного джерела');
+}
+
 async function initApp() {
+  const loadingIndicator = document.createElement('div');
+  loadingIndicator.innerHTML = '🎄 Завантаження різдвяної магії...';
+  loadingIndicator.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: white; padding: 20px; border-radius: 12px; z-index: 9999;
+    border: 2px solid var(--accent); font-size: 16px; text-align: center;
+  `;
+  document.body.appendChild(loadingIndicator);
+
   try {
+    console.log('🚀 Початок завантаження бібліотек...');
+    
+    // Завантажуємо Three.js окремо через fallback систему
+    await loadThreeJS();
+    
+    // Інші бібліотеки
     await Promise.all([
       loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js'),
       loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js'),
-      loadScript('https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.min.js'),  // ФІКС: Остання версія 0.181.0 — працює
       loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js')
     ]);
     
@@ -127,9 +172,11 @@ async function initApp() {
       throw new Error('MediaPipe Pose не завантажився.');
     }
     if (typeof THREE === 'undefined') {
-      throw new Error('Three.js не завантажився.');
+      throw new Error('Three.js не завантажився після всіх спроб.');
     }
-    console.log('Усі бібліотеки завантажено! Початок AR.');
+    
+    console.log('✅ Усі бібліотеки завантажено! Початок AR.');
+    loadingIndicator.innerHTML = '🎉 Готово! Запуск AR...';
 
     const sockPNGs = ['sock1.png', 'sock2.png', 'sock3.png'];
     const video = document.getElementById('camera');
@@ -259,6 +306,7 @@ async function initApp() {
           await cam.start();
           video.style.display = 'block';
           video.style.objectFit = 'cover';
+          console.log('✅ Камера запущена успішно');
         } else {
           throw new Error('Камера не доступна');
         }
@@ -272,7 +320,6 @@ async function initApp() {
       renderer.render(scene, camera3);
       
       if (results.poseLandmarks) {
-        console.log('Детекція пози!');
         const L = results.poseLandmarks;
         const leftAnkle = L[27];
         const rightAnkle = L[28];
@@ -428,6 +475,12 @@ async function initApp() {
     animate();
     renderLoop();
     startCamera();
+    
+    // Видалити індикатор завантаження
+    setTimeout(() => {
+      loadingIndicator.remove();
+    }, 1000);
+    
     setTimeout(() => {
       const guide = document.createElement('div');
       guide.style.position = 'absolute';
@@ -456,7 +509,11 @@ async function initApp() {
     
   } catch (err) {
     console.error('Деталі помилки:', err);
-    alert('Помилка запуску: ' + err.message + '\nСпробуй вимкнути AdBlock або перезавантажити.');
+    loadingIndicator.innerHTML = `❌ Помилка: ${err.message}`;
+    setTimeout(() => {
+      loadingIndicator.remove();
+      alert('Помилка запуску: ' + err.message + '\nСпробуй вимкнути AdBlock або перезавантажити.');
+    }, 2000);
   }
 }
 
