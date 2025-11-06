@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
-<title>Magic Christmas Sock — 3D-Like Try-On</title>
+<title>Magic Christmas Sock — AR Примірка</title>
 <style>
   :root{
     --bg:#fbf7f2;
@@ -89,12 +89,12 @@
   <video id="camera" playsinline></video>
   <canvas id="three-canvas"></canvas>
   <canvas id="snow-canvas"></canvas>
-  <div class="top-left">Magic Sock AR — Try it on your foot 👣</div>
-  <div class="hint">Allow camera → point your foot into view → press 📸 to save</div>
+  <div class="top-left">Magic Sock AR — Примірка на ногу 👣</div>
+  <div class="hint">Дозволь камеру → покажи стопу → натисни 📸 для фото</div>
   <div class="ui">
-    <button id="changeBtn" class="btn">🧦 Change Design</button>
-    <button id="saveBtn" class="btn">📸 Save Photo</button>
-    <button id="flipBtn" class="btn">🔁 Flip Foot</button>
+    <button id="changeBtn" class="btn">🧦 Змінити дизайн</button>
+    <button id="saveBtn" class="btn">📸 Зберегти фото</button>
+    <button id="flipBtn" class="btn">🔁 Перевернути</button>
   </div>
 </div>
 <script>
@@ -102,7 +102,6 @@ async function loadScript(src, fallbackSrc = null) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src;
-    // ФІКС: Без type='module' для глобального scope
     script.onload = () => resolve(script);
     script.onerror = () => {
       if (fallbackSrc) {
@@ -122,13 +121,12 @@ async function loadScript(src, fallbackSrc = null) {
 async function initApp() {
   try {
     await Promise.all([
-      loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js'),  // ФІКС: Без версії — latest
+      loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js'),
       loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js'),
-      loadScript('https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.min.js'),  // ФІКС: min.js — глобальний
+      loadScript('https://cdn.jsdelivr.net/npm/three@0.181.0/build/three.min.js'),
       loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js')
     ]);
     
-    // ФІКС: Детальна перевірка
     if (typeof Pose === 'undefined') {
       throw new Error('MediaPipe Pose not loaded (check AdBlock/CDN).');
     }
@@ -237,7 +235,6 @@ async function initApp() {
       return { x: nx * (window.innerWidth / window.innerHeight), y: ny };
     }
 
-    // ФІКС: new Pose({ ... }) — правильний конструктор
     const pose = new Pose({
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
     });
@@ -271,7 +268,7 @@ async function initApp() {
         }
       } catch (e) {
         console.error('Camera start error', e);
-        alert('Camera access is required. Please allow camera and reload the page.');
+        alert('Доступ до камери потрібен. Дозволь та перезавантаж.');
       }
     }
 
@@ -279,7 +276,7 @@ async function initApp() {
       renderer.render(scene, camera3);
       
       if (results.poseLandmarks) {
-        console.log('Pose detected!');  // Дебаг
+        console.log('Pose detected!');
         const L = results.poseLandmarks;
         const leftAnkle = L[27];
         const rightAnkle = L[28];
@@ -322,7 +319,6 @@ async function initApp() {
       }
     }
 
-    // Кнопки, сніг, animate, renderLoop — без змін (скопіюй з попереднього)
     document.getElementById('changeBtn').addEventListener('click', () => {
       currentDesign = (currentDesign + 1) % designsCount;
       loadDesign(currentDesign);
@@ -373,7 +369,7 @@ async function initApp() {
         link.click();
       } catch (err) {
         console.error('Capture failed', err);
-        alert('Screenshot failed — try again or check browser permissions.');
+        alert('Збереження не вдалося — спробуй ще раз.');
       } finally {
         video.style.display = originalDisplay;
         video.style.zIndex = originalZIndex;
@@ -449,7 +445,7 @@ async function initApp() {
       guide.style.borderRadius = '12px';
       guide.style.fontSize = '15px';
       guide.style.textAlign = 'center';
-      guide.innerText = 'Point your foot into the camera view — the magic sock will follow 👣';
+      guide.innerText = 'Покажи стопу в камеру — шкарпетка "прилипне" 👣';
       document.body.appendChild(guide);
       setTimeout(() => {
         guide.style.transition = 'opacity 500ms';
@@ -463,7 +459,7 @@ async function initApp() {
     }, 1000);
     
   } catch (err) {
-    console.error('Init error details:', err);  // ФІКС: Детальний лог
+    console.error('Init error details:', err);
     alert('Помилка завантаження: ' + err.message + '\nДеталі в консолі (F12). Вимкни AdBlock.');
   }
 }
