@@ -102,9 +102,14 @@ async function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src;
-    script.onload = () => resolve(script);
-    script.onerror = (e) => reject(new Error(`Завантаження ${src} не вдалося: ${e.message}`));
-    script.timeout = 10000;
+    script.onload = () => {
+      console.log(`${src} завантажено успішно`);
+      resolve(script);
+    };
+    script.onerror = (e) => {
+      console.error(`Помилка завантаження ${src}:`, e);
+      reject(new Error(`Завантаження ${src} не вдалося`));
+    };
     document.head.appendChild(script);
   });
 }
@@ -112,17 +117,17 @@ async function loadScript(src) {
 async function initApp() {
   try {
     await Promise.all([
-      loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js'),
-      loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js'),
-      loadScript('https://unpkg.com/three@0.167.0/build/three.min.js'),  // ФІКС: Стабільна версія 0.167.0 на unpkg
+      loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js'),
+      loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js'),
+      loadScript('https://threejs.org/build/three.min.js'),  // ФІКС: Офіційний CDN threejs.org — завжди latest
       loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js')
     ]);
     
     if (typeof Pose === 'undefined') {
-      throw new Error('MediaPipe Pose не завантажився. Перевір AdBlock.');
+      throw new Error('MediaPipe Pose не завантажився.');
     }
     if (typeof THREE === 'undefined') {
-      throw new Error('Three.js не завантажився. Перевір AdBlock.');
+      throw new Error('Three.js не завантажився.');
     }
     console.log('Усі бібліотеки завантажено! Початок AR.');
 
@@ -227,7 +232,7 @@ async function initApp() {
     }
 
     const pose = new Pose({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
     });
     pose.setOptions({
       modelComplexity: 1,
@@ -267,6 +272,7 @@ async function initApp() {
       renderer.render(scene, camera3);
       
       if (results.poseLandmarks) {
+        console.log('Детекція пози!');
         const L = results.poseLandmarks;
         const leftAnkle = L[27];
         const rightAnkle = L[28];
